@@ -1,0 +1,919 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { 
+  Menu, X, ChevronRight, Calendar, MapPin, Users, Award, 
+  CheckCircle2, Play, Info, Target, Lightbulb, ArrowRight,
+  Clock, Video, FileText, Mic2, Send, ChevronDown
+} from 'lucide-react';
+
+// --- Types ---
+interface NavItem {
+  label: string;
+  href: string;
+}
+
+interface TimelineItem {
+  date: string;
+  title: string;
+  desc?: string;
+}
+
+interface AgendaItem {
+  time: string;
+  activity: string;
+  location?: string;
+  desc?: string;
+}
+
+// --- Mock Data ---
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Trang chủ', href: 'home' },
+  { label: 'Chủ đề', href: 'theme' },
+  { label: 'Thể lệ', href: 'rules' },
+  { label: 'Timeline', href: 'timeline' },
+  { label: 'Agenda', href: 'agenda' },
+  { label: 'Giải thưởng', href: 'awards' },
+  { label: 'Đăng ký', href: 'register' },
+];
+
+const TIMELINE: TimelineItem[] = [
+  { date: '06/04 – 19/04', title: 'Mở đơn đăng ký & Vòng 1', desc: 'Nhận bài dự thi video Online' },
+  { date: '27/04', title: 'Công bố Top 5', desc: 'Thí sinh xuất sắc bước vào Vòng 2' },
+  { date: '27/04 – 10/05', title: 'Giai đoạn chuẩn bị Vòng 2', desc: 'Nghiên cứu và xây dựng bài diễn thuyết' },
+  { date: '05/05', title: 'Tập huấn chuyên sâu', desc: 'Buổi đào tạo cùng Ban Giám khảo' },
+  { date: '12/05', title: 'Bán Kết & Chung Kết', desc: 'Sự kiện Offline bùng nổ' },
+];
+
+const AGENDA_OVERVIEW: AgendaItem[] = [
+  { time: '06/04 - 19/04', activity: 'Vòng 1 (Online)', desc: 'Nộp video qua Form đăng ký' },
+  { time: '27/04 - 10/05', activity: 'Chuẩn bị Vòng 2', desc: 'Nộp Slide qua Form bổ sung' },
+  { time: '05/05', activity: 'Tập huấn', desc: 'Google Meet / Zoom' },
+  { time: '12/05', activity: 'Bán kết (Offline)', desc: 'Trình bày + Hỏi đáp' },
+  { time: '12/05', activity: 'Chung kết (Offline)', desc: 'Vấn đáp trực tiếp' },
+];
+
+const AGENDA_FINALS: AgendaItem[] = [
+  { time: '13:00 - 13:30', activity: 'Check-in', desc: 'Đón khách và ổn định vị trí' },
+  { time: '13:30 - 13:45', activity: 'Khai mạc', desc: 'Khai mạc chương trình' },
+  { time: '13:45 - 15:50', activity: 'Bán kết', desc: 'Diễn thuyết cá nhân - 5 thí sinh' },
+  { time: '15:50 - 16:05', activity: 'Nghỉ giải lao', desc: 'Nghỉ giải lao' },
+  { time: '16:05 - 16:35', activity: 'Chung kết', desc: 'Vòng thảo luận - Top 2' },
+  { time: '16:35 - 16:45', activity: 'Ban Giám khảo hội ý', desc: 'BGK hội ý và chấm điểm' },
+  { time: '16:45 - 17:00', activity: 'Trao giải & Bế mạc', desc: 'Vinh danh Quán quân' },
+];
+
+// --- Components ---
+
+const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-ted-black/80 backdrop-blur-md py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
+      <div className="container mx-auto px-6 flex justify-between items-center">
+        <button onClick={() => setTab('home')} className="flex items-center gap-2 group">
+          <span className="text-ted-red font-display font-bold text-2xl tracking-tighter">TEDx</span>
+          <span className="text-white font-display font-medium text-lg hidden sm:block">HCMIU Speaker Contest</span>
+        </button>
+
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-8">
+          {NAV_ITEMS.filter(item => item.href !== 'register').map((item) => (
+            <button 
+              key={item.label} 
+              onClick={() => setTab(item.href)} 
+              className={`text-sm font-medium transition-colors ${currentTab === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
+            >
+              {item.label}
+            </button>
+          ))}
+          <button 
+            onClick={() => setTab('register')} 
+            className="bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105"
+          >
+            Đăng ký ngay
+          </button>
+        </div>
+
+        {/* Mobile Toggle */}
+        <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 w-full bg-ted-black border-b border-white/10 md:hidden overflow-hidden"
+          >
+            <div className="flex flex-col p-6 gap-6">
+              {NAV_ITEMS.map((item) => (
+                <button 
+                  key={item.label} 
+                  onClick={() => { setTab(item.href); setIsOpen(false); }} 
+                  className={`text-lg font-medium text-left ${currentTab === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
+
+const SectionHeading = ({ title, subtitle, centered = false }: { title: string, subtitle?: string, centered?: boolean }) => (
+  <div className={`mb-16 ${centered ? 'text-center' : ''}`}>
+    <motion.span 
+      initial={{ opacity: 0, x: -20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      className="text-ted-red font-bold tracking-widest uppercase text-sm mb-4 block"
+    >
+      {subtitle}
+    </motion.span>
+    <motion.h2 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="text-4xl md:text-5xl font-display font-bold leading-tight"
+    >
+      {title}
+    </motion.h2>
+  </div>
+);
+
+const Hero = ({ setTab }: { setTab: (tab: string) => void }) => {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+
+  return (
+    <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      {/* Background Visuals */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ted-gradient opacity-50 blur-[100px]" />
+        <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h1 className="text-5xl md:text-8xl font-display font-extrabold leading-[0.9] mb-6">
+              TEDx HCMIU <br />
+              <span className="text-ted-red">Speaker Contest</span> <br />
+              <span className="text-white/40">2026</span>
+            </h1>
+            
+            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+              <div className="px-4 py-1 border border-ted-red/50 rounded-full text-ted-red font-bold text-sm tracking-widest uppercase bg-ted-red/5">
+                Chủ đề năm: VÔ HẠN
+              </div>
+            </div>
+
+            <p className="text-lg md:text-xl text-white/60 max-w-2xl mb-12 leading-relaxed">
+              Cuộc thi tìm kiếm những người trẻ dám nghĩ điều chưa ai nghĩ, dám nói điều chưa ai dám nói, 
+              dùng giá trị nội tại để biến những “bức tường” thành “cánh cửa” dẫn đến chân trời vô cực.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <button onClick={() => setTab('register')} className="bg-ted-red hover:bg-ted-red/90 text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group">
+                Đăng ký tham gia <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button onClick={() => setTab('rules')} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-full font-bold text-lg transition-all">
+                Xem thể lệ
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Floating Infinity Element */}
+      <motion.div 
+        style={{ y: y1, opacity }}
+        className="absolute right-[-10%] top-1/4 w-[600px] h-[600px] opacity-20 hidden lg:block pointer-events-none"
+      >
+        <svg viewBox="0 0 100 100" className="w-full h-full text-ted-red animate-pulse">
+          <path d="M30,50 C30,35 45,35 50,50 C55,65 70,65 70,50 C70,35 55,35 50,50 C45,65 30,65 30,50 Z" fill="none" stroke="currentColor" strokeWidth="0.5" />
+        </svg>
+      </motion.div>
+    </section>
+  );
+};
+
+const ThemeSection = () => {
+  return (
+    <section id="theme" className="py-24 relative">
+      <div className="container mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="relative aspect-square rounded-3xl overflow-hidden group"
+          >
+            <div className="w-full h-full bg-gradient-to-br from-ted-red/20 to-ted-black flex items-center justify-center p-12">
+              <div className="relative w-full aspect-square max-w-[300px] flex items-center justify-center">
+                <div className="absolute inset-0 bg-ted-red/10 rounded-full blur-3xl animate-pulse" />
+                <svg viewBox="0 0 100 100" className="w-full h-full text-ted-red relative z-10">
+                  <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.2" strokeDasharray="2 2" />
+                  <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                  <path d="M50 25 L50 75 M25 50 L75 50" stroke="currentColor" strokeWidth="0.2" opacity="0.5" />
+                  <circle cx="50" cy="50" r="8" fill="currentColor" className="animate-pulse" />
+                  <path d="M35 50 Q35 65 50 65 Q65 65 65 50" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M50 65 V75 M40 75 H60" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-ted-black via-transparent to-transparent" />
+            <div className="absolute bottom-10 left-10">
+              <h3 className="text-6xl font-display font-bold text-white tracking-tighter">VÔ HẠN</h3>
+            </div>
+          </motion.div>
+
+          <div>
+            <SectionHeading title="Chủ đề năm: VÔ HẠN" subtitle="Chủ đề" />
+            <div className="space-y-6 text-white/70 text-lg leading-relaxed">
+              <p>
+                Con người vốn mang trong mình tiềm năng vô hạn và không thể đo đếm. Thế nhưng, điều kìm hãm ta vốn không phải thế giới rộng lớn ngoài kia, mà là những rào cản vô hình do chính ta vẽ nên trong tâm trí.
+              </p>
+              <p>
+                Những rào cản ấy được dựng lên từ nỗi sợ và sự e dè, lớn dần theo từng lần ta chọn an toàn thay vì lựa chọn tin vào bản thân. Ta tự thu nhỏ ước mơ vì sợ thất bại, tự chùn bước trước cả những rủi ro chưa kịp xảy ra và dùng hoài nghi đóng chặt lại cánh cửa cơ hội của chính mình.
+              </p>
+              <p className="text-white font-medium border-l-4 border-ted-red pl-6 italic">
+                "Chỉ khi con người đủ can đảm, đủ dũng khí để bước qua những dây leo trói buộc vô hình ấy để nghĩ điều chưa ai nghĩ, nói điều chưa ai dám nói, làm điều trái tim thôi thúc, ta sẽ nhận ra: giới hạn chưa từng tồn tại."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Pillars */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-24">
+          {[
+            { label: 'Truth', content: 'Người trẻ sở hữu tuổi trẻ, luôn khao khát và mong chờ về một tương lai đang chờ đón mình trước mắt.' },
+            { label: 'Tension', content: 'Nhưng họ thường bị kẹt lại trong trạng thái “tự diễn tập” về sự thất bại, tự vẽ nên những rào cản âu lo.' },
+            { label: 'Motivation', content: 'Mong muốn chứng minh rằng rủi ro lớn nhất không phải là thất bại, mà là đứng yên một chỗ.' },
+            { label: 'Insight', content: 'Chỉ khi vượt qua nỗi sợ tự thân, họ mới chạm được đến phiên bản vô hạn của chính mình.' },
+          ].map((item, idx) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className="glass-morphism p-8 rounded-2xl hover:bg-white/10 transition-all"
+            >
+              <span className="text-ted-red font-bold text-xs uppercase tracking-widest mb-4 block">{item.label}</span>
+              <p className="text-white/80 leading-relaxed">{item.content}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const MeaningSection = () => (
+  <section className="py-24 bg-white/5">
+    <div className="container mx-auto px-6">
+      <div className="max-w-4xl mx-auto text-center mb-20">
+        <h2 className="text-3xl md:text-5xl font-display font-bold mb-8">Ý nghĩa đặc biệt của năm 2026</h2>
+        <div className="p-8 glass-morphism rounded-3xl border-ted-red/20 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 text-9xl font-display font-black text-white/5">1</div>
+          <p className="text-xl md:text-2xl font-light leading-relaxed text-white/90">
+            Năm 2026 mang năng lượng của con số 1 (2+0+2+6=10 → 1). Con số 1 tượng trưng cho khởi đầu, bản lĩnh tiên phong và tinh thần dẫn dắt. 
+            <span className="text-ted-red font-bold"> “VÔ HẠN”</span> không chỉ là một chủ đề, mà còn là tinh thần để bứt phá, để tin rằng mỗi cá nhân đều có khả năng tạo ra bước ngoặt cho chính mình.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-8">
+        {[
+          { icon: <Info className="text-ted-red" />, title: 'Ý nghĩa', content: '“VÔ HẠN” đại diện cho tiềm năng không giới hạn. Nếu không tận dụng, sự hoài nghi sẽ biến chúng thành hố đen nuốt chửng chính ta.' },
+          { icon: <Lightbulb className="text-ted-red" />, title: 'Thông điệp', content: 'Hãy để ta của năm số 1 được chạm tới điểm “vô cực” bằng cách bước qua ngưỡng cửa hoài nghi, trở thành “chìa khóa” kiến tạo thực tại.' },
+          { icon: <Target className="text-ted-red" />, title: 'Mục tiêu', content: 'Giúp khán giả nhận diện giới hạn tự tạo, khơi gợi can đảm lựa chọn điều không tưởng và mở rộng mindset qua từng cánh cửa.' },
+        ].map((item, idx) => (
+          <motion.div 
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="p-8 border border-white/10 rounded-2xl hover:border-ted-red/50 transition-all"
+          >
+            <div className="mb-6">{item.icon}</div>
+            <h3 className="text-2xl font-display font-bold mb-4">{item.title}</h3>
+            <p className="text-white/60 leading-relaxed">{item.content.replace('mindset', 'tư duy')}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const SpeakerContestIntro = () => (
+  <section className="py-24">
+    <div className="container mx-auto px-6">
+      <div className="glass-morphism p-12 rounded-[3rem] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-ted-red/5 blur-[100px]" />
+        <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">Cuộc thi Diễn giả</h2>
+            <p className="text-xl text-white/80 mb-8 leading-relaxed">
+              Điểm đến đầu tiên trên hành trình khai sáng chiếc chìa khóa nội tại. Đây là hành động quyết liệt để dẹp tan những rào cản vô hình, mở đầu cho chuỗi các hoạt động bứt phá trong năm 2026.
+            </p>
+            <div className="flex items-center gap-4 text-ted-red font-bold text-lg">
+              <Mic2 />
+              <span>Dùng giá trị nội tại để chứng minh sự tồn tại của những chân trời không giới hạn.</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+              <Users className="text-ted-red mb-4" />
+              <h4 className="font-bold mb-2">Đối tượng</h4>
+              <p className="text-sm text-white/60">Bạn trẻ 18–25 tuổi tại TP.HCM hoặc các tỉnh thành lân cận (có thể tham gia Offline).</p>
+            </div>
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+              <Award className="text-ted-red mb-4" />
+              <h4 className="font-bold mb-2">Cơ hội</h4>
+              <p className="text-sm text-white/60">Trở thành diễn giả chính thức tại sự kiện TEDx Talks 2026 của TEDx HCMIU</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const TimelineSection = () => (
+  <section id="timeline" className="py-24 bg-white/5">
+    <div className="container mx-auto px-6">
+      <SectionHeading title="Hành trình bứt phá" subtitle="Timeline" centered />
+      
+      <div className="relative max-w-5xl mx-auto">
+        {/* Vertical Line */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-ted-red via-ted-red/50 to-transparent hidden md:block" />
+        
+        <div className="space-y-12">
+          {TIMELINE.map((item, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, x: idx % 2 === 0 ? -50 : 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className={`flex flex-col md:flex-row items-center gap-8 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
+            >
+              <div className={`flex-1 ${idx % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
+                <span className="text-ted-red font-display font-bold text-xl mb-2 block">{item.date}</span>
+                <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+                <p className="text-white/60">{item.desc}</p>
+              </div>
+              
+              <div className="relative z-10 w-12 h-12 rounded-full bg-ted-black border-4 border-ted-red flex items-center justify-center shrink-0">
+                <div className="w-2 h-2 rounded-full bg-ted-red animate-ping" />
+              </div>
+              
+              <div className="flex-1 hidden md:block" />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const RulesSection = () => {
+  const [activeTab, setActiveTab] = useState(1);
+
+  return (
+    <section id="rules" className="py-24">
+      <div className="container mx-auto px-6">
+        <SectionHeading title="Thể lệ cuộc thi" subtitle="Thể lệ" centered />
+        
+        <div className="flex justify-center gap-4 mb-12">
+          <button 
+            onClick={() => setActiveTab(1)}
+            className={`px-8 py-3 rounded-full font-bold transition-all ${activeTab === 1 ? 'bg-ted-red text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+          >
+            Vòng 1: Online
+          </button>
+          <button 
+            onClick={() => setActiveTab(2)}
+            className={`px-8 py-3 rounded-full font-bold transition-all ${activeTab === 2 ? 'bg-ted-red text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+          >
+            Vòng 2: Offline
+          </button>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {activeTab === 1 ? (
+            <motion.div 
+              key="tab1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid lg:grid-cols-2 gap-8"
+            >
+              <div className="glass-morphism p-10 rounded-3xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <Video className="text-ted-red" />
+                  <h3 className="text-2xl font-bold">Đề bài Vòng 1</h3>
+                </div>
+                <p className="text-xl font-medium mb-6 italic">“Cơ hội là do may mắn” hay “Cơ hội là do cách nhìn”?</p>
+                <p className="text-white/70 leading-relaxed mb-8">
+                  Hãy kể về một tình huống mà số đông xem đó là một “bức tường” (rủi ro, thất bại, biến động, định kiến), nhưng bạn lại nhìn thấy một “cánh cửa”. Điều gì trong nội lực của bạn đã giúp bạn giữ vững góc nhìn đó? Bạn đã chứng minh lựa chọn của mình là đúng bằng cách nào?
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="text-ted-red shrink-0 mt-1" size={18} />
+                    <span className="text-sm text-white/80">Quay video 5–7 phút</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="text-ted-red shrink-0 mt-1" size={18} />
+                    <span className="text-sm text-white/80">Nội dung 100% nguyên bản, không đạo văn</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="text-ted-red shrink-0 mt-1" size={18} />
+                    <span className="text-sm text-white/80">Hình ảnh và âm thanh đảm bảo chất lượng</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-ted-red/5 border border-ted-red/20 p-10 rounded-3xl flex flex-col justify-center">
+                <h4 className="text-ted-red font-bold uppercase tracking-widest text-sm mb-4">Kết quả</h4>
+                <p className="text-3xl font-display font-bold mb-6">Ban Giám khảo lựa chọn Top 5 thí sinh bước vào Vòng 2</p>
+                <div className="flex items-center gap-4 text-white/60">
+                  <Clock size={20} />
+                  <span>Thời gian: 06/04/2026 – 19/04/2026</span>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="tab2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="grid lg:grid-cols-2 gap-8">
+                <div className="glass-morphism p-10 rounded-3xl">
+                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                    <Mic2 className="text-ted-red" /> Bán kết
+                  </h3>
+                  <p className="text-white/70 mb-6">
+                    Chọn một định kiến, rào cản hoặc “hố đen” trong thế giới hiện nay (Kinh tế, Công nghệ, Nghệ thuật, Tâm lý). Tái định nghĩa nó và chứng minh: “Bức tường” thực chất là một “Cánh cửa” dẫn đến vô cực.
+                  </p>
+                  <ul className="space-y-3 text-sm text-white/60">
+                    <li>• Tối đa 15 phút trình bày + 5 phút Hỏi & Đáp</li>
+                    <li>• Không sử dụng giấy hoặc điện thoại để đọc</li>
+                    <li>• Được phép sử dụng Slide hỗ trợ</li>
+                  </ul>
+                </div>
+                <div className="glass-morphism p-10 rounded-3xl border-ted-red/30">
+                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                    <Target className="text-ted-red" /> Chung kết
+                  </h3>
+                  <p className="text-white/70 mb-6">
+                    Vấn đáp Offline cùng Ban Giám khảo để làm rõ lập luận, chiều sâu tư duy và khả năng phản biện trước những góc nhìn đa chiều.
+                  </p>
+                  <ul className="space-y-3 text-sm text-white/60">
+                    <li>• Thời lượng: 10 phút/thí sinh</li>
+                    <li>• Không chuẩn bị trước câu hỏi</li>
+                    <li>• Chọn 01 Quán quân và 01 Á Quân</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="p-8 bg-ted-red text-white rounded-3xl text-center">
+                <p className="text-xl font-bold italic">
+                  "Bài diễn thuyết của Quán quân sẽ trở thành một trong những bài Talks chính thức tại sự kiện TEDx Talks 2026 của TEDx HCMIU"
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+};
+
+const AgendaSection = () => (
+  <section id="agenda" className="py-24 bg-white/5">
+    <div className="container mx-auto px-6">
+      <SectionHeading title="Chương trình chi tiết" subtitle="Agenda" centered />
+      
+      <div className="grid lg:grid-cols-2 gap-12">
+        <div>
+          <h3 className="text-2xl font-display font-bold mb-8 flex items-center gap-3">
+            <Calendar className="text-ted-red" /> Tổng quan các giai đoạn
+          </h3>
+          <div className="space-y-4">
+            {AGENDA_OVERVIEW.map((item, idx) => (
+              <div key={idx} className="flex gap-6 p-6 glass-morphism rounded-2xl border-white/5">
+                <div className="font-bold text-ted-red whitespace-nowrap">{item.time}</div>
+                <div>
+                  <div className="font-bold mb-1">{item.activity}</div>
+                  <div className="text-sm text-white/50">{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-2xl font-display font-bold mb-8 flex items-center gap-3">
+            <Clock className="text-ted-red" /> Ngày Bán kết & Chung kết (12/05)
+          </h3>
+          <div className="space-y-4">
+            {AGENDA_FINALS.map((item, idx) => (
+              <div key={idx} className="flex gap-6 p-4 border-b border-white/10 hover:bg-white/5 transition-all">
+                <div className="text-sm font-mono text-white/40 pt-1">{item.time}</div>
+                <div>
+                  <div className="font-bold">{item.activity}</div>
+                  <div className="text-xs text-white/40">{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const AwardsSection = () => (
+  <section id="awards" className="py-24">
+    <div className="container mx-auto px-6">
+      <SectionHeading title="Cơ cấu giải thưởng" subtitle="Giải thưởng" centered />
+      
+      <div className="grid md:grid-cols-3 gap-8">
+        {[
+          { title: 'Giải Nhất', color: 'border-ted-red', icon: <Award size={48} className="text-ted-red" />, items: ['Hiện kim hấp dẫn', 'Giấy chứng nhận Quán quân', 'Quà từ NTT và BTC', 'Suất diễn giả TEDx Talks 2026'] },
+          { title: 'Giải Nhì', color: 'border-white/20', icon: <Award size={48} className="text-white/40" />, items: ['Hiện kim', 'Giấy chứng nhận Á quân', 'Quà từ NTT và BTC'] },
+          { title: 'Top 5', color: 'border-white/10', icon: <Award size={48} className="text-white/20" />, items: ['Giấy chứng nhận Top 5', 'Quà từ NTT và BTC', 'Cơ hội kết nối chuyên gia'] },
+        ].map((award, idx) => (
+          <motion.div 
+            key={idx}
+            whileHover={{ y: -10 }}
+            className={`p-10 rounded-[2rem] border-2 ${award.color} glass-morphism flex flex-col items-center text-center`}
+          >
+            <div className="mb-6">{award.icon}</div>
+            <h3 className="text-3xl font-display font-bold mb-8">{award.title}</h3>
+            <ul className="space-y-4 text-white/60 mb-8">
+              {award.items.map((item, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-ted-red" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const RegistrationForm = () => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    birthYear: '',
+    organization: '',
+    location: '',
+    videoLink: '',
+    topicTitle: '',
+    description: '',
+    canAttendOffline: 'yes',
+    agreed: false
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Không thể kết nối với máy chủ. Vui lòng kiểm tra kết nối mạng.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section id="register" className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 ted-gradient opacity-20 pointer-events-none" />
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">Sẵn sàng bứt phá?</h2>
+            <div className="inline-block px-6 py-2 bg-ted-red/10 border border-ted-red/30 rounded-full text-ted-red font-bold mb-6">
+              Hạn chót Vòng 1: 19/04/2026
+            </div>
+            <p className="text-xl text-white/60">Hãy để tiếng nói của bạn trở thành chiếc chìa khóa mở ra chân trời vô hạn.</p>
+          </div>
+
+          <div className="glass-morphism p-8 md:p-12 rounded-[3rem]">
+            {submitted ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-20"
+              >
+                <div className="w-20 h-20 bg-ted-red rounded-full flex items-center justify-center mx-auto mb-8">
+                  <CheckCircle2 size={40} className="text-white" />
+                </div>
+                <h3 className="text-3xl font-bold mb-4">Đăng ký thành công!</h3>
+                <p className="text-white/60 mb-8">Cảm ơn bạn đã tham gia TEDx HCMIU Speaker Contest 2026. <br />Chúng tôi sẽ liên hệ với bạn qua email sớm nhất.</p>
+                <button 
+                  onClick={() => setSubmitted(false)}
+                  className="text-ted-red font-bold hover:underline"
+                >
+                  Gửi đơn đăng ký khác
+                </button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Họ và tên</label>
+                    <input 
+                      required
+                      type="text" 
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      placeholder="Nguyễn Văn A" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Email</label>
+                    <input 
+                      required
+                      type="email" 
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="example@gmail.com" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Số điện thoại</label>
+                    <input 
+                      required
+                      type="tel" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="090xxxxxxx" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Năm sinh</label>
+                    <input 
+                      required
+                      type="number" 
+                      name="birthYear"
+                      value={formData.birthYear}
+                      onChange={handleChange}
+                      placeholder="200x" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Trường / Đơn vị</label>
+                    <input 
+                      required
+                      type="text" 
+                      name="organization"
+                      value={formData.organization}
+                      onChange={handleChange}
+                      placeholder="ĐH Quốc Tế - ĐHQG TP.HCM" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Link video dự thi vòng 1 (Drive/Youtube/TikTok)</label>
+                  <input 
+                    required
+                    type="url" 
+                    name="videoLink"
+                    value={formData.videoLink}
+                    onChange={handleChange}
+                    placeholder="https://..." 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Chủ đề / Tiêu đề bài nói</label>
+                  <input 
+                    required
+                    type="text" 
+                    name="topicTitle"
+                    value={formData.topicTitle}
+                    onChange={handleChange}
+                    placeholder="Ví dụ: Vượt qua nỗi sợ thất bại" 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white/50 uppercase tracking-widest">Mô tả ngắn về bài dự thi</label>
+                  <textarea 
+                    required
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Tóm tắt nội dung bài nói của bạn..." 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:border-ted-red focus:outline-none transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-white/50 uppercase tracking-widest">Bạn có thể tham gia trực tiếp tại TP.HCM?</span>
+                    <select 
+                      name="canAttendOffline"
+                      value={formData.canAttendOffline}
+                      onChange={handleChange}
+                      className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none"
+                    >
+                      <option value="yes">Có</option>
+                      <option value="no">Không</option>
+                    </select>
+                  </div>
+                  
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      required
+                      type="checkbox" 
+                      name="agreed"
+                      checked={formData.agreed}
+                      onChange={handleChange}
+                      className="w-5 h-5 accent-ted-red"
+                    />
+                    <span className="text-sm text-white/60 group-hover:text-white transition-colors">Tôi đồng ý với các thể lệ và quy định của cuộc thi.</span>
+                  </label>
+                </div>
+
+                <button 
+                  disabled={loading}
+                  type="submit" 
+                  className="w-full bg-ted-red hover:bg-ted-red/90 text-white py-5 rounded-2xl font-bold text-xl flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Đang gửi...' : (
+                    <>Gửi đơn đăng ký <Send size={20} /></>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Footer = () => (
+  <footer className="py-20 border-t border-white/10">
+    <div className="container mx-auto px-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="col-span-1 lg:col-span-2">
+          <a href="#home" className="flex items-center gap-2 mb-6">
+            <span className="text-ted-red font-display font-bold text-3xl tracking-tighter">TEDx</span>
+            <span className="text-white font-display font-medium text-xl">HCMIU Speaker Contest</span>
+          </a>
+          <p className="text-white/40 max-w-md leading-relaxed">
+            Cuộc thi tìm kiếm những tiếng nói truyền cảm hứng, dám bứt phá giới hạn và kiến tạo những giá trị mới cho cộng đồng.
+          </p>
+        </div>
+        <div>
+          <h4 className="font-bold mb-6 uppercase tracking-widest text-sm">Điều hướng</h4>
+          <ul className="space-y-4 text-white/40">
+            {NAV_ITEMS.map(item => (
+              <li key={item.label}><a href={item.href} className="hover:text-ted-red transition-colors">{item.label}</a></li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold mb-6 uppercase tracking-widest text-sm">Liên hệ</h4>
+          <ul className="space-y-4 text-white/40">
+            <li>Email: tedxhcmiu@gmail.com</li>
+            <li>Fanpage: TEDx HCMIU</li>
+            <li>Địa chỉ: ĐH Quốc Tế - ĐHQG TP.HCM</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 gap-6">
+        <p className="text-white/20 text-sm">
+          © 2026 TEDx HCMIU Speaker Contest. This independent TEDx event is operated under license from TED.
+        </p>
+        <div className="flex gap-6">
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-ted-red hover:border-ted-red transition-all group"
+          >
+            <ChevronDown className="rotate-180 group-hover:text-white" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+);
+
+export default function App() {
+  const [currentTab, setCurrentTab] = useState('home');
+
+  const setTab = (tab: string) => {
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="bg-ted-black text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
+      <Navbar currentTab={currentTab} setTab={setTab} />
+      <main className="flex-grow pt-20">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {currentTab === 'home' && <Hero setTab={setTab} />}
+            {currentTab === 'theme' && (
+              <>
+                <ThemeSection />
+                <MeaningSection />
+              </>
+            )}
+            {currentTab === 'rules' && (
+              <>
+                <SpeakerContestIntro />
+                <RulesSection />
+              </>
+            )}
+            {currentTab === 'timeline' && <TimelineSection />}
+            {currentTab === 'agenda' && <AgendaSection />}
+            {currentTab === 'awards' && <AwardsSection />}
+            {currentTab === 'register' && <RegistrationForm />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+      <Footer />
+    </div>
+  );
+}

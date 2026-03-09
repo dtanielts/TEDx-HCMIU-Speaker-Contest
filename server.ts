@@ -1,0 +1,91 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import Database from "better-sqlite3";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  // Database setup
+  const db = new Database("registrations.db");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS registrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fullName TEXT,
+      email TEXT,
+      phone TEXT,
+      birthYear TEXT,
+      organization TEXT,
+      location TEXT,
+      videoLink TEXT,
+      topicTitle TEXT,
+      description TEXT,
+      canAttendOffline TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  app.use(express.json());
+
+  // API routes
+  app.post("/api/register", (req, res) => {
+    try {
+      const { 
+        fullName, email, phone, birthYear, organization, 
+        location, videoLink, topicTitle, description, canAttendOffline 
+      } = req.body;
+
+      const stmt = db.prepare(`
+        INSERT INTO registrations (
+          fullName, email, phone, birthYear, organization, 
+          location, videoLink, topicTitle, description, canAttendOffline
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      stmt.run(
+        fullName, email, phone, birthYear, organization, 
+        location, videoLink, topicTitle, description, canAttendOffline
+      );
+
+      res.status(201).json({ success: true, message: "Registration successful" });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/registrations", (req, res) => {
+    try {
+      const rows = db.prepare("SELECT * FROM registrations ORDER BY created_at DESC").all();
+      res.json(rows);
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Failed to fetch registrations" });
+    }
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    // Serve static files in production
+    app.use(express.static(path.join(__dirname, "dist")));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
