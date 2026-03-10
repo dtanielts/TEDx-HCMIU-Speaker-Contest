@@ -183,7 +183,7 @@ const FAQSection = () => {
   );
 };
 
-const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: string) => void }) => {
+const Navbar = ({ activeSection }: { activeSection: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -193,10 +193,27 @@ const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: stri
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80; // Navbar height
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setIsOpen(false);
+  };
+
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-ted-black/80 backdrop-blur-md py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#05070F]/90 backdrop-blur-xl py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
-        <button onClick={() => setTab('home')} className="flex items-center gap-2 group">
+        <button onClick={() => scrollToSection('home')} className="flex items-center gap-2 group">
           <span className="text-ted-red font-display font-bold text-2xl tracking-tighter">TEDx</span>
           <span className="text-white font-display font-medium text-lg hidden sm:block">HCMIU Speaker Contest</span>
         </button>
@@ -206,22 +223,22 @@ const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: stri
           {NAV_ITEMS.filter(item => item.href !== 'register').map((item) => (
             <button 
               key={item.label} 
-              onClick={() => setTab(item.href)} 
-              className={`text-sm font-medium transition-colors ${currentTab === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
+              onClick={() => scrollToSection(item.href)} 
+              className={`text-sm font-medium transition-colors ${activeSection === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
             >
               {item.label}
             </button>
           ))}
           <button 
-            onClick={() => setTab('register')} 
-            className="bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105"
+            onClick={() => scrollToSection('register')} 
+            className="bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg shadow-ted-red/20"
           >
             Đăng ký ngay
           </button>
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
+        <button className="md:hidden text-white p-2" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
@@ -230,21 +247,27 @@ const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: stri
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full bg-ted-black border-b border-white/10 md:hidden overflow-hidden"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="absolute top-full left-0 w-full bg-[#05070F] border-b border-white/10 md:hidden overflow-hidden shadow-2xl"
           >
-            <div className="flex flex-col p-6 gap-6">
+            <div className="flex flex-col p-8 gap-6">
               {NAV_ITEMS.map((item) => (
                 <button 
                   key={item.label} 
-                  onClick={() => { setTab(item.href); setIsOpen(false); }} 
-                  className={`text-lg font-medium text-left ${currentTab === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
+                  onClick={() => scrollToSection(item.href)} 
+                  className={`text-xl font-bold text-left py-2 border-b border-white/5 ${activeSection === item.href ? 'text-ted-red' : 'text-white/90'}`}
                 >
                   {item.label}
                 </button>
               ))}
+              <button 
+                onClick={() => scrollToSection('register')} 
+                className="w-full bg-ted-red text-white py-4 rounded-xl font-bold text-center mt-4"
+              >
+                Đăng ký ngay
+              </button>
             </div>
           </motion.div>
         )}
@@ -1033,54 +1056,61 @@ const Footer = () => (
 );
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('home');
+  const [activeSection, setActiveSection] = useState('home');
 
-  const setTab = (tab: string) => {
-    setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = NAV_ITEMS.map(item => document.getElementById(item.href));
+      const scrollPosition = window.scrollY + 100;
+
+      sections.forEach(section => {
+        if (section) {
+          const sectionTop = section.offsetTop;
+          const sectionHeight = section.offsetHeight;
+          if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+            setActiveSection(section.id);
+          }
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="bg-ted-black text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
-      <Navbar currentTab={currentTab} setTab={setTab} />
-      <main className="flex-grow pt-20">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {currentTab === 'home' && (
-              <>
-                <Hero setTab={setTab} />
-                <FAQSection />
-              </>
-            )}
-            {currentTab === 'theme' && (
-              <>
-                <ThemeSection />
-                <MeaningSection />
-              </>
-            )}
-            {currentTab === 'rules' && (
-              <>
-                <SpeakerContestIntro />
-                <RulesSection />
-              </>
-            )}
-            {currentTab === 'timeline' && <TimelineSection />}
-            {currentTab === 'agenda' && (
-              <>
-                <AgendaSection />
-                <FAQSection />
-              </>
-            )}
-            {currentTab === 'awards' && <AwardsSection />}
-            {currentTab === 'register' && <RegistrationForm />}
-          </motion.div>
-        </AnimatePresence>
+    <div className="bg-[#05070F] text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
+      <Navbar activeSection={activeSection} />
+      <main className="flex-grow">
+        <Hero setTab={() => {}} />
+        
+        <div id="theme">
+          <ThemeSection />
+          <MeaningSection />
+        </div>
+
+        <div id="rules">
+          <SpeakerContestIntro />
+          <RulesSection />
+        </div>
+
+        <div id="timeline">
+          <TimelineSection />
+        </div>
+
+        <div id="agenda">
+          <AgendaSection />
+        </div>
+
+        <div id="awards">
+          <AwardsSection />
+        </div>
+
+        <FAQSection />
+
+        <div id="register">
+          <RegistrationForm />
+        </div>
       </main>
       <Footer />
     </div>
