@@ -1174,13 +1174,10 @@ const AboutTEDx = () => (
           <SectionHeading title="Lan tỏa những ý tưởng giá trị" subtitle="Về chúng tôi" />
           <div className="space-y-6 text-white/70 text-lg leading-relaxed">
             <p>
-              Đa số chúng ta chắc hẳn đã từng nghe đến TED, vậy còn TEDx thì sao? TEDx là những sự kiện được tổ chức độc lập dựa trên những giá trị tốt đẹp của TED: “Những ý tưởng đáng lan truyền” (Ideas Worth Spreading*)
+              TEDx là chương trình gồm các sự kiện địa phương, tự tổ chức, mang mọi người lại gần nhau để chia sẻ trải nghiệm giống như TED. Tại sự kiện TEDx, các video TED Talks và các diễn giả trực tiếp kết hợp để khơi dậy thảo luận và kết nối sâu sắc.
             </p>
             <p>
-              TEDx HCMIU được thành lập với mục đích mang đến cho mọi người, đặc biệt là các bạn trẻ, một môi trường nơi mà các bạn được lắng nghe, chia sẻ và học hỏi kinh nghiệm và quan trọng hơn hết là tạo ra sự kết nối giữa con người với con người.
-            </p>
-            <p className="text-sm text-white/40 italic">
-              *Nay là Ideas Change Everything
+              TEDxHCMIU tự hào là một trong những cộng đồng TEDx năng động nhất, nơi hội tụ những tâm hồn khao khát kiến thức và mong muốn tạo ra thay đổi tích cực thông qua sức mạnh của ngôn từ.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-8 mt-12">
@@ -1287,6 +1284,7 @@ const MainPortal = () => {
         <PortalHero />
         <AboutTEDx />
         <PastEvents />
+        <FeaturedContest />
       </main>
       <Footer showNav={false} />
     </div>
