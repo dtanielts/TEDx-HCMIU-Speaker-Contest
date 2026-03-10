@@ -15,6 +15,17 @@
   --color-neon-red: #D94545;
   --color-cyber-bg: #05070F;
   --color-ted-red: #eb0028;
+  --color-ted-black: #000000;
+}
+
+@layer utilities {
+  .glass-morphism {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .ted-gradient {
+    background: radial-gradient(circle at center, #eb0028 0%, transparent 70%);
+  }
 }
 
 @layer base {

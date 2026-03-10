@@ -112,6 +112,21 @@ async function startServer() {
     }
   });
 
+  app.delete("/api/registrations/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (isPostgres) {
+        await db.query("DELETE FROM registrations WHERE id = $1", [id]);
+      } else {
+        db.prepare("DELETE FROM registrations WHERE id = ?").run(id);
+      }
+      res.json({ success: true, message: "Registration deleted successfully" });
+    } catch (error) {
+      console.error("Delete error:", error);
+      res.status(500).json({ success: false, message: "Failed to delete registration" });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

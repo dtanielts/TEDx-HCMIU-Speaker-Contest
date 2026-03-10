@@ -5,7 +5,7 @@ import {
   Menu, X, ChevronRight, Calendar, MapPin, Users, Award, 
   CheckCircle2, Play, Info, Target, Lightbulb, ArrowRight,
   Clock, Video, FileText, Mic2, Send, ChevronDown, ExternalLink,
-  History, Globe, Heart
+  History, Globe, Heart, Shield, Download, Search, Filter, Trash2
 } from 'lucide-react';
 
 // --- Types ---
@@ -1022,7 +1022,7 @@ const RegistrationForm = () => {
   );
 };
 
-const Footer = () => (
+const Footer = ({ showNav = true }: { showNav?: boolean }) => (
   <footer className="py-20 border-t border-white/10">
     <div className="container mx-auto px-6">
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
@@ -1034,14 +1034,16 @@ const Footer = () => (
             Cuộc thi tìm kiếm những tiếng nói truyền cảm hứng, dám bứt phá giới hạn và kiến tạo những giá trị mới cho cộng đồng.
           </p>
         </div>
-        <div>
-          <h4 className="font-bold mb-6 uppercase tracking-widest text-sm">Điều hướng</h4>
-          <ul className="space-y-4 text-white/40">
-            {NAV_ITEMS.map(item => (
-              <li key={item.label}><a href={item.href} className="hover:text-ted-red transition-colors">{item.label}</a></li>
-            ))}
-          </ul>
-        </div>
+        {showNav && (
+          <div>
+            <h4 className="font-bold mb-6 uppercase tracking-widest text-sm">Điều hướng</h4>
+            <ul className="space-y-4 text-white/40">
+              {NAV_ITEMS.map(item => (
+                <li key={item.label}><a href={`#${item.href}`} className="hover:text-ted-red transition-colors">{item.label}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div>
           <h4 className="font-bold mb-6 uppercase tracking-widest text-sm">Liên hệ</h4>
           <ul className="space-y-4 text-white/40">
@@ -1089,8 +1091,8 @@ const MainNavbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          <Link to="/" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Về chúng tôi</Link>
-          <Link to="/" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Sự kiện</Link>
+          <Link to="/#about" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Về chúng tôi</Link>
+          <Link to="/#events" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Sự kiện</Link>
           <Link to="/speaker-contest" className="relative bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg shadow-ted-red/20">
             Speaker Contest
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -1114,8 +1116,8 @@ const MainNavbar = () => {
             className="absolute top-full left-0 w-full bg-[#05070F] border-b border-white/10 md:hidden overflow-hidden"
           >
             <div className="flex flex-col p-8 gap-6">
-              <Link to="/" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Về chúng tôi</Link>
-              <Link to="/" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Sự kiện</Link>
+              <Link to="/#about" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Về chúng tôi</Link>
+              <Link to="/#events" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Sự kiện</Link>
               <Link to="/speaker-contest" onClick={() => setIsOpen(false)} className="text-xl font-bold text-ted-red">Speaker Contest</Link>
             </div>
           </motion.div>
@@ -1136,10 +1138,12 @@ const PortalHero = () => (
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <span className="text-ted-red font-bold tracking-[0.3em] uppercase text-sm mb-6 block">Explore our</span>
-        <h1 className="text-6xl md:text-9xl font-display font-extrabold leading-tight mb-8">
-          Sự kiện đang <br className="md:hidden" /> <span className="text-ted-red">diễn ra</span>
-        </h1>
+        <Logo size="text-6xl md:text-9xl" className="justify-center mb-8" />
+        
+        <div className="inline-block px-6 py-2 bg-ted-red/10 border border-ted-red/30 rounded-full text-ted-red font-bold mb-8 uppercase tracking-widest text-sm">
+          Explore our Sự kiện đang diễn ra
+        </div>
+
         <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto mb-12 leading-relaxed">
           Nơi những ý tưởng giá trị được lan tỏa, kết nối cộng đồng và khơi nguồn cảm hứng cho thế hệ trẻ tại Đại học Quốc tế - ĐHQG TP.HCM.
         </p>
@@ -1147,9 +1151,6 @@ const PortalHero = () => (
           <Link to="/speaker-contest" className="relative bg-ted-red hover:bg-ted-red/90 text-white px-10 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group shadow-2xl shadow-ted-red/40">
             Speaker Contest 2026 
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-            <div className="absolute -top-3 -right-3 bg-white text-ted-red text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-tighter animate-bounce">
-              Hot
-            </div>
           </Link>
           <div className="flex items-center gap-2 text-white/40 text-sm font-medium">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -1162,7 +1163,7 @@ const PortalHero = () => (
 );
 
 const AboutTEDx = () => (
-  <section className="py-24 bg-white/5">
+  <section id="about" className="py-24 bg-white/5">
     <div className="container mx-auto px-6">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
         <motion.div
@@ -1173,10 +1174,13 @@ const AboutTEDx = () => (
           <SectionHeading title="Lan tỏa những ý tưởng giá trị" subtitle="Về chúng tôi" />
           <div className="space-y-6 text-white/70 text-lg leading-relaxed">
             <p>
-              TEDx là chương trình gồm các sự kiện địa phương, tự tổ chức, mang mọi người lại gần nhau để chia sẻ trải nghiệm giống như TED. Tại sự kiện TEDx, các video TED Talks và các diễn giả trực tiếp kết hợp để khơi dậy thảo luận và kết nối sâu sắc.
+              Đa số chúng ta chắc hẳn đã từng nghe đến TED, vậy còn TEDx thì sao? TEDx là những sự kiện được tổ chức độc lập dựa trên những giá trị tốt đẹp của TED: “Những ý tưởng đáng lan truyền” (Ideas Worth Spreading*)
             </p>
             <p>
-              TEDxHCMIU tự hào là một trong những cộng đồng TEDx năng động nhất, nơi hội tụ những tâm hồn khao khát kiến thức và mong muốn tạo ra thay đổi tích cực thông qua sức mạnh của ngôn từ.
+              TEDx HCMIU được thành lập với mục đích mang đến cho mọi người, đặc biệt là các bạn trẻ, một môi trường nơi mà các bạn được lắng nghe, chia sẻ và học hỏi kinh nghiệm và quan trọng hơn hết là tạo ra sự kết nối giữa con người với con người.
+            </p>
+            <p className="text-sm text-white/40 italic">
+              *Nay là Ideas Change Everything
             </p>
           </div>
           <div className="grid grid-cols-3 gap-8 mt-12">
@@ -1216,7 +1220,7 @@ const AboutTEDx = () => (
 
 const PastEvents = () => {
   return (
-    <section className="py-24">
+    <section id="events" className="py-24">
       <div className="container mx-auto px-6">
         <SectionHeading title="Các sự kiện đã diễn ra" subtitle="Lịch sử" centered />
         <div className="max-w-4xl mx-auto">
@@ -1234,7 +1238,7 @@ const PastEvents = () => {
 };
 
 const FeaturedContest = () => (
-  <section className="py-24 bg-ted-red/5 border-y border-white/5">
+  <section id="featured" className="py-24 bg-ted-red/5 border-y border-white/5">
     <div className="container mx-auto px-6">
       <div className="glass-morphism p-12 rounded-[3rem] relative overflow-hidden border-ted-red/20">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-ted-red/10 blur-[120px]" />
@@ -1262,9 +1266,19 @@ const FeaturedContest = () => (
 );
 
 const MainPortal = () => {
+  const { hash } = useLocation();
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    if (hash) {
+      const id = hash.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [hash]);
 
   return (
     <div className="bg-[#05070F] text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
@@ -1273,9 +1287,8 @@ const MainPortal = () => {
         <PortalHero />
         <AboutTEDx />
         <PastEvents />
-        <FeaturedContest />
       </main>
-      <Footer />
+      <Footer showNav={false} />
     </div>
   );
 };
@@ -1355,12 +1368,229 @@ const SpeakerContestPage = () => {
   );
 };
 
+const AdminDashboard = () => {
+  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    fetchRegistrations();
+  }, []);
+
+  const fetchRegistrations = async () => {
+    try {
+      const response = await fetch('/api/registrations');
+      const data = await response.json();
+      setRegistrations(data);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadCSV = () => {
+    if (registrations.length === 0) return;
+    
+    const headers = Object.keys(registrations[0]).join(',');
+    const rows = registrations.map(reg => 
+      Object.values(reg).map(val => `"${val}"`).join(',')
+    ).join('\n');
+    
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${rows}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "tedx_registrations.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const filteredRegistrations = registrations.filter(reg => {
+    const matchesSearch = 
+      reg.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reg.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reg.topicTitle?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filter === 'all') return matchesSearch;
+    return matchesSearch && reg.canAttendOffline === filter;
+  });
+
+  return (
+    <div className="bg-[#05070F] min-h-screen text-white p-8 pt-24">
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div>
+            <h1 className="text-4xl font-display font-bold mb-2 flex items-center gap-3">
+              <Shield className="text-ted-red" /> Admin Dashboard
+            </h1>
+            <p className="text-white/40">Quản lý danh sách đăng ký TEDx HCMIU Speaker Contest 2026</p>
+          </div>
+          <div className="flex gap-4">
+            <button 
+              onClick={fetchRegistrations}
+              className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10"
+              title="Làm mới"
+            >
+              <History size={20} />
+            </button>
+            <button 
+              onClick={downloadCSV}
+              className="bg-ted-red hover:bg-ted-red/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-ted-red/20"
+            >
+              <Download size={20} /> Xuất CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="glass-morphism p-6 rounded-2xl">
+            <div className="text-white/40 text-sm uppercase tracking-widest mb-2">Tổng số đơn</div>
+            <div className="text-4xl font-display font-bold text-ted-red">{registrations.length}</div>
+          </div>
+          <div className="glass-morphism p-6 rounded-2xl">
+            <div className="text-white/40 text-sm uppercase tracking-widest mb-2">Có thể tham gia Offline</div>
+            <div className="text-4xl font-display font-bold text-green-500">
+              {registrations.filter(r => r.canAttendOffline === 'yes').length}
+            </div>
+          </div>
+          <div className="glass-morphism p-6 rounded-2xl">
+            <div className="text-white/40 text-sm uppercase tracking-widest mb-2">Đơn mới (24h)</div>
+            <div className="text-4xl font-display font-bold text-blue-500">
+              {registrations.filter(r => {
+                const date = new Date(r.created_at);
+                const now = new Date();
+                return (now.getTime() - date.getTime()) < (24 * 60 * 60 * 1000);
+              }).length}
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-morphism rounded-3xl overflow-hidden border border-white/10">
+          <div className="p-6 border-b border-white/10 flex flex-col md:flex-row gap-4 justify-between bg-white/5">
+            <div className="relative flex-grow max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm theo tên, email, chủ đề..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 focus:border-ted-red focus:outline-none transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Filter size={18} className="text-white/40" />
+              <select 
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none"
+              >
+                <option value="all">Tất cả</option>
+                <option value="yes">Offline</option>
+                <option value="no">Online only</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white/5 text-white/40 text-xs uppercase tracking-widest">
+                  <th className="px-6 py-4 font-bold">Thời gian</th>
+                  <th className="px-6 py-4 font-bold">Họ và tên</th>
+                  <th className="px-6 py-4 font-bold">Thông tin liên hệ</th>
+                  <th className="px-6 py-4 font-bold">Chủ đề</th>
+                  <th className="px-6 py-4 font-bold">Video</th>
+                  <th className="px-6 py-4 font-bold">Offline</th>
+                  <th className="px-6 py-4 font-bold">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center text-white/20">Đang tải dữ liệu...</td>
+                  </tr>
+                ) : filteredRegistrations.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center text-white/20">Không tìm thấy đơn đăng ký nào.</td>
+                  </tr>
+                ) : (
+                  filteredRegistrations.map((reg) => (
+                    <tr key={reg.id} className="hover:bg-white/5 transition-colors group">
+                      <td className="px-6 py-4 text-sm text-white/40">
+                        {new Date(reg.created_at).toLocaleDateString('vi-VN')} <br />
+                        {new Date(reg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold">{reg.fullName}</div>
+                        <div className="text-xs text-white/40">{reg.birthYear} • {reg.organization}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <div>{reg.email}</div>
+                        <div className="text-white/40">{reg.phone}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium line-clamp-1" title={reg.topicTitle}>{reg.topicTitle}</div>
+                        <div className="text-xs text-white/40 line-clamp-1">{reg.description}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <a 
+                          href={reg.videoLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-ted-red hover:underline flex items-center gap-1 text-sm"
+                        >
+                          Xem video <ExternalLink size={14} />
+                        </a>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${reg.canAttendOffline === 'yes' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                          {reg.canAttendOffline === 'yes' ? 'Có' : 'Không'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm('Bạn có chắc chắn muốn xóa đơn đăng ký này?')) {
+                              try {
+                                const response = await fetch(`/api/registrations/${reg.id}`, { method: 'DELETE' });
+                                if (response.ok) {
+                                  fetchRegistrations();
+                                } else {
+                                  alert('Xóa thất bại');
+                                }
+                              } catch (error) {
+                                console.error('Delete error:', error);
+                              }
+                            }
+                          }}
+                          className="p-2 text-white/20 hover:text-ted-red transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MainPortal />} />
         <Route path="/speaker-contest" element={<SpeakerContestPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );
