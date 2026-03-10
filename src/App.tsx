@@ -64,6 +64,125 @@ const AGENDA_FINALS: AgendaItem[] = [
 
 // --- Components ---
 
+const CountdownTimer = ({ targetDate }: { targetDate: string }) => {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = new Date(targetDate).getTime() - now;
+
+      if (distance < 0) {
+        clearInterval(timer);
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  const units = [
+    { label: 'Ngày', value: timeLeft.days },
+    { label: 'Giờ', value: timeLeft.hours },
+    { label: 'Phút', value: timeLeft.minutes },
+    { label: 'Giây', value: timeLeft.seconds },
+  ];
+
+  return (
+    <div className="flex gap-4 md:gap-8">
+      {units.map((unit) => (
+        <div key={unit.label} className="text-center">
+          <div className="w-16 h-16 md:w-20 md:h-20 glass-morphism rounded-2xl flex items-center justify-center mb-2 border-ted-red/20">
+            <span className="text-2xl md:text-3xl font-display font-bold text-white">
+              {unit.value.toString().padStart(2, '0')}
+            </span>
+          </div>
+          <span className="text-[10px] md:text-xs uppercase tracking-widest text-white/40 font-bold">
+            {unit.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const FAQSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: "Đối tượng tham gia cuộc thi là ai?",
+      a: "Cuộc thi dành cho tất cả các bạn trẻ (sinh viên, học sinh, người đi làm) có độ tuổi từ 16 - 25 trên toàn quốc, có niềm đam mê diễn thuyết và mong muốn chia sẻ những ý tưởng giá trị."
+    },
+    {
+      q: "Tôi có thể đăng ký tham gia theo nhóm không?",
+      a: "TEDx HCMIU Speaker Contest là cuộc thi diễn thuyết cá nhân. Do đó, mỗi thí sinh chỉ được đăng ký tham gia với tư cách cá nhân."
+    },
+    {
+      q: "Video dự thi Vòng 1 cần những yêu cầu gì?",
+      a: "Video có độ dài từ 2-3 phút, trình bày về một khía cạnh của chủ đề 'VÔ HẠN'. Bạn có thể quay bằng điện thoại, đảm bảo âm thanh rõ ràng và không cần biên tập quá cầu kỳ. Quan trọng nhất là nội dung và cách bạn truyền tải thông điệp."
+    },
+    {
+      q: "Ngôn ngữ dự thi là tiếng Anh hay tiếng Việt?",
+      a: "Thí sinh có thể lựa chọn sử dụng tiếng Anh hoặc tiếng Việt. Tuy nhiên, chúng tôi khuyến khích sử dụng ngôn ngữ mà bạn cảm thấy tự tin nhất để truyền tải trọn vẹn ý tưởng của mình."
+    },
+    {
+      q: "Làm sao để biết tôi đã đăng ký thành công?",
+      a: "Sau khi nhấn nút 'Gửi đơn đăng ký', màn hình sẽ hiển thị thông báo thành công. Đồng thời, hệ thống sẽ lưu trữ thông tin của bạn và Ban tổ chức sẽ liên hệ qua email trong vòng 48h làm việc."
+    }
+  ];
+
+  return (
+    <section id="faq" className="py-24 relative bg-ted-black/50">
+      <div className="container mx-auto px-6">
+        <SectionHeading title="Câu hỏi thường gặp" subtitle="FAQ" centered />
+        <div className="max-w-3xl mx-auto space-y-4">
+          {faqs.map((faq, idx) => (
+            <div 
+              key={idx} 
+              className={`glass-morphism rounded-2xl overflow-hidden transition-all duration-300 border ${activeIndex === idx ? 'border-ted-red/50 bg-white/5' : 'border-white/5'}`}
+            >
+              <button 
+                onClick={() => setActiveIndex(activeIndex === idx ? null : idx)}
+                className="w-full p-6 flex items-center justify-between text-left"
+              >
+                <span className="text-lg font-bold text-white/90">{faq.q}</span>
+                <ChevronDown className={`text-ted-red transition-transform duration-300 ${activeIndex === idx ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {activeIndex === idx && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-6 pt-0 text-white/60 leading-relaxed border-t border-white/5 mt-2">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const Navbar = ({ currentTab, setTab }: { currentTab: string, setTab: (tab: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -192,13 +311,18 @@ const Hero = ({ setTab }: { setTab: (tab: string) => void }) => {
               dùng giá trị nội tại để biến những “bức tường” thành “cánh cửa” dẫn đến chân trời vô cực.
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 mb-12">
               <button onClick={() => setTab('register')} className="bg-ted-red hover:bg-ted-red/90 text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group">
                 Đăng ký tham gia <ArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button onClick={() => setTab('rules')} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-full font-bold text-lg transition-all">
                 Xem thể lệ
               </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-bold text-white/40 uppercase tracking-[0.2em]">Thời gian còn lại để đăng ký</p>
+              <CountdownTimer targetDate="2026-04-19T23:59:59" />
             </div>
           </motion.div>
         </div>
@@ -616,6 +740,18 @@ const RegistrationForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (formData.phone.length < 10) {
+      alert('Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
+      return;
+    }
+
+    if (!formData.videoLink.startsWith('http')) {
+      alert('Link video phải bắt đầu bằng http:// hoặc https://');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -629,6 +765,7 @@ const RegistrationForm = () => {
 
       if (response.ok) {
         setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const errorData = await response.json();
         alert(errorData.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.');
@@ -659,16 +796,38 @@ const RegistrationForm = () => {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-20"
+                className="text-center py-12"
               >
-                <div className="w-20 h-20 bg-ted-red rounded-full flex items-center justify-center mx-auto mb-8">
-                  <CheckCircle2 size={40} className="text-white" />
+                <div className="w-24 h-24 bg-ted-red/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-ted-red/30">
+                  <CheckCircle2 size={48} className="text-ted-red" />
                 </div>
-                <h3 className="text-3xl font-bold mb-4">Đăng ký thành công!</h3>
-                <p className="text-white/60 mb-8">Cảm ơn bạn đã tham gia TEDx HCMIU Speaker Contest 2026. <br />Chúng tôi sẽ liên hệ với bạn qua email sớm nhất.</p>
+                <h3 className="text-4xl font-bold mb-6">Đăng ký thành công!</h3>
+                <p className="text-xl text-white/60 mb-12 max-w-lg mx-auto leading-relaxed">
+                  Cảm ơn bạn đã tham gia TEDx HCMIU Speaker Contest 2026. <br />
+                  Hành trình bứt phá giới hạn của bạn bắt đầu từ đây. 
+                  Hãy kiểm tra email thường xuyên để nhận thông báo mới nhất từ BTC.
+                </p>
+                
+                <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto mb-12">
+                  <a 
+                    href="https://facebook.com/tedxhcmiu" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold transition-all"
+                  >
+                    Theo dõi Fanpage
+                  </a>
+                  <a 
+                    href="#" 
+                    className="flex items-center justify-center gap-2 bg-ted-red hover:bg-ted-red/90 py-4 rounded-xl font-bold transition-all"
+                  >
+                    Tham gia Zalo Group
+                  </a>
+                </div>
+
                 <button 
                   onClick={() => setSubmitted(false)}
-                  className="text-ted-red font-bold hover:underline"
+                  className="text-white/40 hover:text-ted-red font-medium transition-colors"
                 >
                   Gửi đơn đăng ký khác
                 </button>
@@ -893,7 +1052,12 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {currentTab === 'home' && <Hero setTab={setTab} />}
+            {currentTab === 'home' && (
+              <>
+                <Hero setTab={setTab} />
+                <FAQSection />
+              </>
+            )}
             {currentTab === 'theme' && (
               <>
                 <ThemeSection />
@@ -907,7 +1071,12 @@ export default function App() {
               </>
             )}
             {currentTab === 'timeline' && <TimelineSection />}
-            {currentTab === 'agenda' && <AgendaSection />}
+            {currentTab === 'agenda' && (
+              <>
+                <AgendaSection />
+                <FAQSection />
+              </>
+            )}
             {currentTab === 'awards' && <AwardsSection />}
             {currentTab === 'register' && <RegistrationForm />}
           </motion.div>

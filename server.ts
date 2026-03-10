@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
+import pg from "pg";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,46 +12,83 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Database setup
-  const db = new Database("registrations.db");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS registrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      fullName TEXT,
-      email TEXT,
-      phone TEXT,
-      birthYear TEXT,
-      organization TEXT,
-      location TEXT,
-      videoLink TEXT,
-      topicTitle TEXT,
-      description TEXT,
-      canAttendOffline TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  // Database initialization
+  let db: any;
+  const isPostgres = !!process.env.DATABASE_URL;
+
+  if (isPostgres) {
+    console.log("Using Postgres database");
+    const pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    
+    // Initialize Postgres table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id SERIAL PRIMARY KEY,
+        fullName TEXT,
+        email TEXT,
+        phone TEXT,
+        birthYear TEXT,
+        organization TEXT,
+        location TEXT,
+        videoLink TEXT,
+        topicTitle TEXT,
+        description TEXT,
+        canAttendOffline TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    db = pool;
+  } else {
+    console.log("Using SQLite database (local)");
+    const sqliteDb = new Database("registrations.db");
+    sqliteDb.exec(`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fullName TEXT,
+        email TEXT,
+        phone TEXT,
+        birthYear TEXT,
+        organization TEXT,
+        location TEXT,
+        videoLink TEXT,
+        topicTitle TEXT,
+        description TEXT,
+        canAttendOffline TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    db = sqliteDb;
+  }
 
   app.use(express.json());
 
   // API routes
-  app.post("/api/register", (req, res) => {
+  app.post("/api/register", async (req, res) => {
     try {
       const { 
         fullName, email, phone, birthYear, organization, 
         location, videoLink, topicTitle, description, canAttendOffline 
       } = req.body;
 
-      const stmt = db.prepare(`
-        INSERT INTO registrations (
-          fullName, email, phone, birthYear, organization, 
-          location, videoLink, topicTitle, description, canAttendOffline
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        fullName, email, phone, birthYear, organization, 
-        location, videoLink, topicTitle, description, canAttendOffline
-      );
+      if (isPostgres) {
+        await db.query(`
+          INSERT INTO registrations (
+            fullName, email, phone, birthYear, organization, 
+            location, videoLink, topicTitle, description, canAttendOffline
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [fullName, email, phone, birthYear, organization, location, videoLink, topicTitle, description, canAttendOffline]);
+      } else {
+        const stmt = db.prepare(`
+          INSERT INTO registrations (
+            fullName, email, phone, birthYear, organization, 
+            location, videoLink, topicTitle, description, canAttendOffline
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        stmt.run(fullName, email, phone, birthYear, organization, location, videoLink, topicTitle, description, canAttendOffline);
+      }
 
       res.status(201).json({ success: true, message: "Registration successful" });
     } catch (error) {
@@ -59,9 +97,15 @@ async function startServer() {
     }
   });
 
-  app.get("/api/registrations", (req, res) => {
+  app.get("/api/registrations", async (req, res) => {
     try {
-      const rows = db.prepare("SELECT * FROM registrations ORDER BY created_at DESC").all();
+      let rows;
+      if (isPostgres) {
+        const result = await db.query("SELECT * FROM registrations ORDER BY created_at DESC");
+        rows = result.rows;
+      } else {
+        rows = db.prepare("SELECT * FROM registrations ORDER BY created_at DESC").all();
+      }
       res.json(rows);
     } catch (error) {
       res.status(500).json({ success: false, message: "Failed to fetch registrations" });
