@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { 
   Menu, X, ChevronRight, Calendar, MapPin, Users, Award, 
   CheckCircle2, Play, Info, Target, Lightbulb, ArrowRight,
-  Clock, Video, FileText, Mic2, Send, ChevronDown
+  Clock, Video, FileText, Mic2, Send, ChevronDown, ExternalLink,
+  History, Globe, Heart
 } from 'lucide-react';
 
 // --- Types ---
@@ -63,6 +65,14 @@ const AGENDA_FINALS: AgendaItem[] = [
 ];
 
 // --- Components ---
+
+const Logo = ({ className = "", size = "text-2xl" }: { className?: string, size?: string }) => (
+  <div className={`flex items-center select-none ${className}`}>
+    <span className={`text-[#eb0028] font-sans font-extrabold ${size} tracking-[-0.05em]`}>TED</span>
+    <span className={`text-[#eb0028] font-sans font-medium ${size} tracking-[-0.05em]`}>x</span>
+    <span className={`text-white font-sans font-medium ${size} tracking-[-0.02em] ml-1`}>HCMIU</span>
+  </div>
+);
 
 const CountdownTimer = ({ targetDate }: { targetDate: string }) => {
   const [timeLeft, setTimeLeft] = useState({
@@ -183,7 +193,7 @@ const FAQSection = () => {
   );
 };
 
-const Navbar = ({ activeSection }: { activeSection: string }) => {
+const Navbar = ({ activeSection, scrollToSection }: { activeSection: string, scrollToSection: (id: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -193,44 +203,37 @@ const Navbar = ({ activeSection }: { activeSection: string }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 80; // Navbar height
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = element.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+  const handleNavClick = (id: string) => {
+    scrollToSection(id);
     setIsOpen(false);
   };
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#05070F]/90 backdrop-blur-xl py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled || isOpen ? 'bg-[#05070F]/95 backdrop-blur-xl py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
-        <button onClick={() => scrollToSection('home')} className="flex items-center gap-2 group">
-          <span className="text-ted-red font-display font-bold text-2xl tracking-tighter">TEDx</span>
-          <span className="text-white font-display font-medium text-lg hidden sm:block">HCMIU Speaker Contest</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <Link to="/" className="text-white/50 hover:text-white transition-colors">
+            <ArrowRight className="rotate-180" size={20} />
+          </Link>
+          <button onClick={() => handleNavClick('home')} className="flex items-center gap-2 group">
+            <Logo size="text-xl" />
+            <span className="text-white/40 font-display font-medium text-sm hidden lg:block ml-2">Speaker Contest</span>
+          </button>
+        </div>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.filter(item => item.href !== 'register').map((item) => (
             <button 
               key={item.label} 
-              onClick={() => scrollToSection(item.href)} 
+              onClick={() => handleNavClick(item.href)} 
               className={`text-sm font-medium transition-colors ${activeSection === item.href ? 'text-ted-red' : 'text-white/70 hover:text-ted-red'}`}
             >
               {item.label}
             </button>
           ))}
           <button 
-            onClick={() => scrollToSection('register')} 
+            onClick={() => handleNavClick('register')} 
             className="bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg shadow-ted-red/20"
           >
             Đăng ký ngay
@@ -256,14 +259,14 @@ const Navbar = ({ activeSection }: { activeSection: string }) => {
               {NAV_ITEMS.map((item) => (
                 <button 
                   key={item.label} 
-                  onClick={() => scrollToSection(item.href)} 
+                  onClick={() => handleNavClick(item.href)} 
                   className={`text-xl font-bold text-left py-2 border-b border-white/5 ${activeSection === item.href ? 'text-ted-red' : 'text-white/90'}`}
                 >
                   {item.label}
                 </button>
               ))}
               <button 
-                onClick={() => scrollToSection('register')} 
+                onClick={() => handleNavClick('register')} 
                 className="w-full bg-ted-red text-white py-4 rounded-xl font-bold text-center mt-4"
               >
                 Đăng ký ngay
@@ -297,7 +300,7 @@ const SectionHeading = ({ title, subtitle, centered = false }: { title: string, 
   </div>
 );
 
-const Hero = ({ setTab }: { setTab: (tab: string) => void }) => {
+const Hero = ({ scrollToSection }: { scrollToSection: (id: string) => void }) => {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
@@ -318,7 +321,7 @@ const Hero = ({ setTab }: { setTab: (tab: string) => void }) => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-8xl font-display font-extrabold leading-[0.9] mb-6">
-              TEDx HCMIU <br />
+              <Logo size="text-5xl md:text-8xl" className="mb-4" />
               <span className="text-ted-red">Speaker Contest</span> <br />
               <span className="text-white/40">2026</span>
             </h1>
@@ -335,10 +338,10 @@ const Hero = ({ setTab }: { setTab: (tab: string) => void }) => {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-12">
-              <button onClick={() => setTab('register')} className="bg-ted-red hover:bg-ted-red/90 text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group">
+              <button onClick={() => scrollToSection('register')} className="bg-ted-red hover:bg-ted-red/90 text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group">
                 Đăng ký tham gia <ArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button onClick={() => setTab('rules')} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-full font-bold text-lg transition-all">
+              <button onClick={() => scrollToSection('rules')} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-full font-bold text-lg transition-all">
                 Xem thể lệ
               </button>
             </div>
@@ -788,7 +791,19 @@ const RegistrationForm = () => {
 
       if (response.ok) {
         setSubmitted(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Scroll to the register section instead of top of page
+        const element = document.getElementById('register');
+        if (element) {
+          const offset = 80;
+          const bodyRect = document.body.getBoundingClientRect().top;
+          const elementRect = element.getBoundingClientRect().top;
+          const elementPosition = elementRect - bodyRect;
+          const offsetPosition = elementPosition - offset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
       } else {
         const errorData = await response.json();
         alert(errorData.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.');
@@ -1013,8 +1028,7 @@ const Footer = () => (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
         <div className="col-span-1 lg:col-span-2">
           <a href="#home" className="flex items-center gap-2 mb-6">
-            <span className="text-ted-red font-display font-bold text-3xl tracking-tighter">TEDx</span>
-            <span className="text-white font-display font-medium text-xl">HCMIU Speaker Contest</span>
+            <Logo size="text-3xl" />
           </a>
           <p className="text-white/40 max-w-md leading-relaxed">
             Cuộc thi tìm kiếm những tiếng nói truyền cảm hứng, dám bứt phá giới hạn và kiến tạo những giá trị mới cho cộng đồng.
@@ -1055,10 +1069,234 @@ const Footer = () => (
   </footer>
 );
 
-export default function App() {
-  const [activeSection, setActiveSection] = useState('home');
+// --- Portal Components ---
+
+const MainNavbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled || isOpen ? 'bg-[#05070F]/95 backdrop-blur-xl py-4 border-b border-white/10' : 'bg-transparent py-6'}`}>
+      <div className="container mx-auto px-6 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-2 group">
+          <Logo />
+        </Link>
+
+        <div className="hidden md:flex items-center gap-8">
+          <Link to="/" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Về chúng tôi</Link>
+          <Link to="/" className="text-sm font-medium text-white/70 hover:text-ted-red transition-colors">Sự kiện</Link>
+          <Link to="/speaker-contest" className="relative bg-ted-red hover:bg-ted-red/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg shadow-ted-red/20">
+            Speaker Contest
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            </span>
+          </Link>
+        </div>
+
+        <button className="md:hidden text-white p-2" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="absolute top-full left-0 w-full bg-[#05070F] border-b border-white/10 md:hidden overflow-hidden"
+          >
+            <div className="flex flex-col p-8 gap-6">
+              <Link to="/" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Về chúng tôi</Link>
+              <Link to="/" onClick={() => setIsOpen(false)} className="text-xl font-bold text-white/90">Sự kiện</Link>
+              <Link to="/speaker-contest" onClick={() => setIsOpen(false)} className="text-xl font-bold text-ted-red">Speaker Contest</Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
+
+const PortalHero = () => (
+  <section className="relative min-h-[80vh] flex items-center pt-20 overflow-hidden">
+    <div className="absolute inset-0 z-0">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ted-gradient opacity-30 blur-[120px]" />
+    </div>
+    <div className="container mx-auto px-6 relative z-10 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <span className="text-ted-red font-bold tracking-[0.3em] uppercase text-sm mb-6 block">Explore our</span>
+        <h1 className="text-6xl md:text-9xl font-display font-extrabold leading-tight mb-8">
+          Sự kiện đang <br className="md:hidden" /> <span className="text-ted-red">diễn ra</span>
+        </h1>
+        <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto mb-12 leading-relaxed">
+          Nơi những ý tưởng giá trị được lan tỏa, kết nối cộng đồng và khơi nguồn cảm hứng cho thế hệ trẻ tại Đại học Quốc tế - ĐHQG TP.HCM.
+        </p>
+        <div className="flex flex-col items-center gap-6">
+          <Link to="/speaker-contest" className="relative bg-ted-red hover:bg-ted-red/90 text-white px-10 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all group shadow-2xl shadow-ted-red/40">
+            Speaker Contest 2026 
+            <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+            <div className="absolute -top-3 -right-3 bg-white text-ted-red text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-tighter animate-bounce">
+              Hot
+            </div>
+          </Link>
+          <div className="flex items-center gap-2 text-white/40 text-sm font-medium">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            1 sự kiện đang mở đơn đăng ký
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  </section>
+);
+
+const AboutTEDx = () => (
+  <section className="py-24 bg-white/5">
+    <div className="container mx-auto px-6">
+      <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+        >
+          <SectionHeading title="Lan tỏa những ý tưởng giá trị" subtitle="Về chúng tôi" />
+          <div className="space-y-6 text-white/70 text-lg leading-relaxed">
+            <p>
+              TEDx là chương trình gồm các sự kiện địa phương, tự tổ chức, mang mọi người lại gần nhau để chia sẻ trải nghiệm giống như TED. Tại sự kiện TEDx, các video TED Talks và các diễn giả trực tiếp kết hợp để khơi dậy thảo luận và kết nối sâu sắc.
+            </p>
+            <p>
+              TEDxHCMIU tự hào là một trong những cộng đồng TEDx năng động nhất, nơi hội tụ những tâm hồn khao khát kiến thức và mong muốn tạo ra thay đổi tích cực thông qua sức mạnh của ngôn từ.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-8 mt-12">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-ted-red mb-1">5</div>
+              <div className="text-xs text-white/40 uppercase tracking-widest">Năm hoạt động</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-ted-red mb-1">10+</div>
+              <div className="text-xs text-white/40 uppercase tracking-widest">Sự kiện</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-ted-red mb-1">15+</div>
+              <div className="text-xs text-white/40 uppercase tracking-widest">Diễn giả</div>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl shadow-ted-red/10 border border-white/10 bg-black"
+        >
+          <iframe 
+            className="w-full h-full"
+            src="https://www.youtube.com/embed/Uf-EkmlBO2E?start=273" 
+            title="TEDxHCMIU Video" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        </motion.div>
+      </div>
+    </div>
+  </section>
+);
+
+const PastEvents = () => {
+  return (
+    <section className="py-24">
+      <div className="container mx-auto px-6">
+        <SectionHeading title="Các sự kiện đã diễn ra" subtitle="Lịch sử" centered />
+        <div className="max-w-4xl mx-auto">
+          <div className="glass-morphism p-12 rounded-[3rem] text-center border-dashed border-white/10">
+            <History className="mx-auto text-white/20 mb-6" size={64} />
+            <h3 className="text-2xl font-display font-bold text-white/40 mb-4 italic">To be updated</h3>
+            <p className="text-white/20 max-w-md mx-auto">
+              Chúng tôi đang cập nhật kho lưu trữ các sự kiện tuyệt vời đã diễn ra tại TEDxHCMIU. Hãy quay lại sau nhé!
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const FeaturedContest = () => (
+  <section className="py-24 bg-ted-red/5 border-y border-white/5">
+    <div className="container mx-auto px-6">
+      <div className="glass-morphism p-12 rounded-[3rem] relative overflow-hidden border-ted-red/20">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-ted-red/10 blur-[120px]" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1">
+            <span className="text-ted-red font-bold tracking-widest uppercase text-xs mb-4 block">Đang diễn ra</span>
+            <h2 className="text-4xl md:text-6xl font-display font-extrabold mb-6">Speaker Contest <span className="text-ted-red">2026</span></h2>
+            <p className="text-xl text-white/70 mb-8 leading-relaxed">
+              Cơ hội trở thành diễn giả chính thức trên sân khấu TEDxHCMIU. Hãy chia sẻ ý tưởng của bạn về chủ đề "VÔ HẠN".
+            </p>
+            <Link to="/speaker-contest" className="inline-flex items-center gap-3 bg-ted-red hover:bg-ted-red/90 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl shadow-ted-red/20">
+              Khám phá ngay <ExternalLink size={20} />
+            </Link>
+          </div>
+          <div className="w-full md:w-1/3 aspect-square relative">
+            <div className="absolute inset-0 ted-gradient opacity-20 blur-3xl rounded-full animate-pulse" />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Mic2 size={120} className="text-ted-red opacity-80" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const MainPortal = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  return (
+    <div className="bg-[#05070F] text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
+      <MainNavbar />
+      <main className="flex-grow">
+        <PortalHero />
+        <AboutTEDx />
+        <PastEvents />
+        <FeaturedContest />
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+const SpeakerContestPage = () => {
+  const [activeSection, setActiveSection] = useState('home');
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
     const handleScroll = () => {
       const sections = NAV_ITEMS.map(item => document.getElementById(item.href));
       const scrollPosition = window.scrollY + 100;
@@ -1080,9 +1318,9 @@ export default function App() {
 
   return (
     <div className="bg-[#05070F] text-white selection:bg-ted-red selection:text-white min-h-screen flex flex-col">
-      <Navbar activeSection={activeSection} />
+      <Navbar activeSection={activeSection} scrollToSection={scrollToSection} />
       <main className="flex-grow">
-        <Hero setTab={() => {}} />
+        <Hero scrollToSection={scrollToSection} />
         
         <div id="theme">
           <ThemeSection />
@@ -1114,5 +1352,16 @@ export default function App() {
       </main>
       <Footer />
     </div>
+  );
+};
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainPortal />} />
+        <Route path="/speaker-contest" element={<SpeakerContestPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
